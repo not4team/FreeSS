@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">FreeSS</string>
+
+    <string name="action_settings">Settings</string>
+    <string name="btn_start">开启</string>
+    <string name="btn_starting">开启中</string>
+    <string name="btn_stop">停止</string>
+    <string name="select_server">线路选择:</string>
+    <string name="invalid_server">Invalid server name</string>
+    <string name="service_failed">Failed to connect the remote server</string>
+    <string name="stop">Stop</string>
+    <string name="stopping">Shutting down…</string>
+    <string name="vpn_error">%s</string>
+    <string name="vpn_permission_denied">Permission denied to create a VPN service</string>
+    <string name="reboot_required">Failed to start VPN service. You might need to reboot your device.</string>
+    <string name="profile_empty">Please select a profile</string>
+    <string name="proxy_empty">Proxy/Password should not be empty</string>
+    <string name="speed">%s/s</string>
+    <string name="stat_summary">Sent: \t\t\t\t\t%3$s\t↑\t%1$s\nReceived: \t%4$s\t↓\t%2$s</string>
+    <string name="forward_success">Shadowsocks started.</string>
+</resources>
