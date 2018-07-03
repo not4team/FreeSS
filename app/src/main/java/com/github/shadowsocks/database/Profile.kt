@@ -118,6 +118,7 @@ class Profile : Serializable {
 
     @PrimaryKey(autoGenerate = true)
     var id: Long = 0
+    var originUrl: String? = ""
     var name: String? = ""
     var host: String = "198.199.101.152"
     var remotePort: Int = 8388
@@ -134,6 +135,8 @@ class Profile : Serializable {
     var rx: Long = 0
     var userOrder: Long = 0
     var plugin: String? = null
+    var vpnType: Int = 1
+    var brookType: String? = "default"
 
     @Ignore // not persisted in db, only used by direct boot
     var dirty: Boolean = false
@@ -151,6 +154,7 @@ class Profile : Serializable {
         if (!name.isNullOrEmpty()) builder.fragment(name)
         return builder.build()
     }
+
     override fun toString() = toUri().toString()
 
     fun serialize() {
@@ -169,6 +173,7 @@ class Profile : Serializable {
         DataStore.plugin = plugin ?: ""
         DataStore.privateStore.remove(Key.dirty)
     }
+
     fun deserialize() {
         // It's assumed that default values are never used, so 0/false/null is always used even if that isn't the case
         name = DataStore.privateStore.getString(Key.name) ?: ""

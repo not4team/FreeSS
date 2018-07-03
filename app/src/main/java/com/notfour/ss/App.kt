@@ -50,7 +50,7 @@ class App : Application() {
     fun reloadService() = sendBroadcast(Intent(Action.RELOAD))
     fun stopService() = sendBroadcast(Intent(Action.CLOSE))
 
-    val currentProfile: Profile?
+    var currentProfile: Profile? = null
         get() = if (DataStore.directBootAware) DirectBoot.getDeviceProfile() else ProfileManager.getProfile(DataStore.profileId)
 
     override fun onCreate() {
