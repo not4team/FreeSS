@@ -22,6 +22,7 @@ package com.github.shadowsocks.database
 
 import android.arch.persistence.room.*
 import android.net.Uri
+import android.support.annotation.NonNull
 import android.util.Base64
 import android.util.Log
 import com.github.shadowsocks.preference.DataStore
@@ -94,8 +95,8 @@ class Profile : Serializable {
 
     @android.arch.persistence.room.Dao
     interface Dao {
-        @Query("SELECT * FROM `Profile` WHERE `id` = :id")
-        operator fun get(id: Long): Profile?
+        @Query("SELECT * FROM `Profile` WHERE `originUrl` = :originUrl")
+        operator fun get(originUrl: String): Profile?
 
         @Query("SELECT * FROM `Profile` ORDER BY `userOrder`")
         fun list(): List<Profile>
@@ -109,16 +110,23 @@ class Profile : Serializable {
         @Insert
         fun create(value: Profile): Long
 
+        @Insert(onConflict = OnConflictStrategy.REPLACE)
+        fun insertProfiles(profiles: List<Profile>)
+
         @Update
         fun update(value: Profile): Int
 
-        @Query("DELETE FROM `Profile` WHERE `id` = :id")
-        fun delete(id: Long): Int
+        @Query("DELETE FROM `Profile` WHERE `originUrl` = :originUrl")
+        fun delete(originUrl: String): Int
+
+        @Query("DELETE FROM `Profile`")
+        fun clear()
     }
 
-    @PrimaryKey(autoGenerate = true)
     var id: Long = 0
-    var originUrl: String? = ""
+    @PrimaryKey
+    @NonNull
+    var originUrl: String = ""
     var name: String? = ""
     var host: String = "198.199.101.152"
     var remotePort: Int = 8388

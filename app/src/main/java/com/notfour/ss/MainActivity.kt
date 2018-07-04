@@ -2,6 +2,7 @@ package com.notfour.ss
 
 import android.app.Activity
 import android.app.PendingIntent
+import android.app.backup.BackupManager
 import android.content.Context
 import android.content.Intent
 import android.net.VpnService
@@ -9,17 +10,22 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
+import android.widget.AdapterView
 import android.widget.Button
 import android.widget.Spinner
 import android.widget.Toast
 import com.github.shadowsocks.ShadowsocksConnection
+import com.github.shadowsocks.aidl.IShadowsocksService
 import com.github.shadowsocks.aidl.IShadowsocksServiceCallback
 import com.github.shadowsocks.bg.BaseService
+import com.github.shadowsocks.bg.Executable
 import com.github.shadowsocks.database.Profile
+import com.github.shadowsocks.database.ProfileManager
+import com.github.shadowsocks.preference.DataStore
 import com.google.android.gms.ads.AdView
 import com.notfour.ss.App.Companion.app
 import com.notfour.ss.adapter.MySpinnerAdapter
-import com.notfour.ss.utils.CyptoUtils
 import com.notfour.ss.utils.OkhttpHelper
 
 class MainActivity : AppCompatActivity(), ShadowsocksConnection.Interface {
@@ -34,7 +40,7 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Interface {
     lateinit var mBtn: Button
     lateinit var mSpinner: Spinner
     lateinit var mAdapter: MySpinnerAdapter
-
+    lateinit var mList: List<Profile>
     // service
     var state = BaseService.IDLE
 
@@ -49,6 +55,17 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Interface {
 
             override fun trafficPersisted(profileId: Long) {
             }
+        }
+    }
+
+    override fun onServiceConnected(service: IShadowsocksService) = changeState(service.state)
+    override fun onServiceDisconnected() = changeState(BaseService.IDLE)
+    override fun binderDied() {
+        super.binderDied()
+        app.handler.post {
+            connection.disconnect()
+            Executable.killAll()
+            connection.connect()
         }
     }
 
@@ -78,15 +95,18 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Interface {
 //        val adRequest = AdRequest.Builder().build()
 //        mAdView.loadAd(adRequest)
         initClick()
+        changeState(BaseService.IDLE)   // reset everything to init state
+        app.handler.post { connection.connect() }
     }
 
     fun initClick() {
         OkhttpHelper.loadProfiles(object : OkhttpHelper.CallBack<List<Profile>> {
             override fun onSuccess(result: List<Profile>) {
+                mList = result
                 mAdapter.refreshItems(result)
-                var first = result.first()
-                first.password = CyptoUtils.decode(first.password)
-                app.currentProfile = first
+                ProfileManager.clearProfile()
+                ProfileManager.insertProfiles(result)
+                DataStore.originUrl = result.first().originUrl
             }
 
             override fun onFail() {
@@ -105,6 +125,23 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Interface {
                 else -> app.startService()
             }
         }
+        mSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onNothingSelected(p0: AdapterView<*>?) {
+
+            }
+
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                app.switchProfile(mList[position].originUrl)
+            }
+
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        connection.disconnect()
+        BackupManager(this).dataChanged()
+        app.handler.removeCallbacksAndMessages(null)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

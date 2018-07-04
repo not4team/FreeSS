@@ -22,12 +22,12 @@ package com.github.shadowsocks.preference
 
 import android.os.Binder
 import android.support.v7.app.AppCompatDelegate
-import com.notfour.ss.App.Companion.app
 import com.github.shadowsocks.database.PrivateDatabase
 import com.github.shadowsocks.database.PublicDatabase
 import com.github.shadowsocks.utils.DirectBoot
 import com.github.shadowsocks.utils.Key
 import com.github.shadowsocks.utils.parsePort
+import com.notfour.ss.App.Companion.app
 
 object DataStore {
     val publicStore = RoomPreferenceDataStore(PublicDatabase.kvPairDao)
@@ -36,6 +36,7 @@ object DataStore {
 
     // hopefully hashCode = mHandle doesn't change, currently this is true from KitKat to Nougat
     private val userIndex by lazy { Binder.getCallingUserHandle().hashCode() }
+
     private fun getLocalPort(key: String, default: Int): Int {
         val value = publicStore.getInt(key)
         return if (value != null) {
@@ -50,18 +51,25 @@ object DataStore {
             publicStore.putLong(Key.id, value)
             if (DataStore.directBootAware) DirectBoot.update()
         }
+    var originUrl: String
+        get() = publicStore.getString(Key.originUrl) ?: ""
+        set(value) {
+            publicStore.putString(Key.originUrl, value)
+            if (DataStore.directBootAware) DirectBoot.update()
+        }
     val canToggleLocked: Boolean get() = publicStore.getBoolean(Key.directBootAware) == true
     val directBootAware: Boolean get() = app.directBootSupported && canToggleLocked
     private var nightModeString: String
         get() = publicStore.getString(Key.nightMode) ?: Key.nightModeSystem
         set(value) = publicStore.putString(Key.nightMode, value)
     @AppCompatDelegate.NightMode
-    val nightMode: Int get() = when (nightModeString) {
-        Key.nightModeAuto -> AppCompatDelegate.MODE_NIGHT_AUTO
-        Key.nightModeOff -> AppCompatDelegate.MODE_NIGHT_NO
-        Key.nightModeOn -> AppCompatDelegate.MODE_NIGHT_YES
-        else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
-    }
+    val nightMode: Int
+        get() = when (nightModeString) {
+            Key.nightModeAuto -> AppCompatDelegate.MODE_NIGHT_AUTO
+            Key.nightModeOff -> AppCompatDelegate.MODE_NIGHT_NO
+            Key.nightModeOn -> AppCompatDelegate.MODE_NIGHT_YES
+            else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+        }
     var serviceMode: String
         get() = publicStore.getString(Key.serviceMode) ?: Key.modeVpn
         set(value) = publicStore.putString(Key.serviceMode, value)

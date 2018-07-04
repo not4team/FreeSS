@@ -51,7 +51,13 @@ class App : Application() {
     fun stopService() = sendBroadcast(Intent(Action.CLOSE))
 
     var currentProfile: Profile? = null
-        get() = if (DataStore.directBootAware) DirectBoot.getDeviceProfile() else ProfileManager.getProfile(DataStore.profileId)
+        get() = if (DataStore.directBootAware) DirectBoot.getDeviceProfile() else ProfileManager.getProfile(DataStore.originUrl)
+
+    fun switchProfile(originUrl: String): Profile {
+        val result = ProfileManager.getProfile(originUrl) ?: ProfileManager.createProfile()
+        DataStore.originUrl = result.originUrl
+        return result
+    }
 
     override fun onCreate() {
         super.onCreate()
