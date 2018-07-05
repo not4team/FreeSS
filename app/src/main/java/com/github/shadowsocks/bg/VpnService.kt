@@ -29,14 +29,15 @@ import android.os.Build
 import android.os.IBinder
 import android.os.ParcelFileDescriptor
 import android.util.Log
-import com.notfour.ss.App.Companion.app
 import com.github.shadowsocks.JniHelper
 import com.github.shadowsocks.VpnRequestActivity
 import com.github.shadowsocks.preference.DataStore
 import com.github.shadowsocks.utils.Subnet
 import com.github.shadowsocks.utils.parseNumericAddress
 import com.github.shadowsocks.utils.systemService
+import com.notfour.ss.App.Companion.app
 import com.notfour.ss.MainActivity
+import com.notfour.ss.R
 import java.io.File
 import java.io.FileDescriptor
 import java.io.IOException
@@ -98,6 +99,7 @@ class VpnService : BaseVpnService(), LocalDnsService.Interface {
             }
         }
     }
+
     class NullConnectionException : NullPointerException()
 
     init {
@@ -123,10 +125,12 @@ class VpnService : BaseVpnService(), LocalDnsService.Interface {
         override fun onAvailable(network: Network) {
             underlyingNetwork = network
         }
+
         override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities?) {
             // it's a good idea to refresh capabilities
             underlyingNetwork = network
         }
+
         override fun onLost(network: Network) {
             underlyingNetwork = null
         }
@@ -156,7 +160,7 @@ class VpnService : BaseVpnService(), LocalDnsService.Interface {
         if (BaseService.usingVpnMode)
             if (BaseVpnService.prepare(this) != null)
                 startActivity(Intent(this, VpnRequestActivity::class.java)
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             else return super<LocalDnsService.Interface>.onStartCommand(intent, flags, startId)
         stopRunner(true)
         return Service.START_NOT_STICKY
@@ -206,6 +210,18 @@ class VpnService : BaseVpnService(), LocalDnsService.Interface {
                         }
                     }
             if (!profile.bypass) builder.addAllowedApplication(me)
+        }
+
+        when (profile.route) {
+            "all", "bypass-china", "custom-rules" -> builder.addRoute("0.0.0.0", 0)
+            else -> {
+                resources.getStringArray(R.array.bypass_private_route).forEach {
+                    val subnet = Subnet.fromString(it)!!
+                    builder.addRoute(subnet.address.hostAddress, subnet.prefixSize)
+                }
+                profile.remoteDns.split(",").mapNotNull { it.trim().parseNumericAddress() }
+                        .forEach { builder.addRoute(it, it.address.size shl 3) }
+            }
         }
 
         val conn = builder.establish() ?: throw NullConnectionException()
