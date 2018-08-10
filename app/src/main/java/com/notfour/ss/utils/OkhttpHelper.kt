@@ -1,8 +1,7 @@
 package com.notfour.ss.utils
 
-import android.os.Handler
-import android.os.Looper
 import com.github.shadowsocks.database.Profile
+import com.notfour.ss.App.Companion.app
 import okhttp3.*
 import org.json.JSONObject
 import java.io.IOException
@@ -16,7 +15,6 @@ import java.io.IOException
  */
 object OkhttpHelper {
     private val client = OkHttpClient()
-    private val handler = Handler(Looper.getMainLooper())
 
     interface CallBack<T> {
         fun onSuccess(result: T)
@@ -29,7 +27,7 @@ object OkhttpHelper {
                 .build()
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                handler.post { callBack.onFail() }
+                app.handler.post { callBack.onFail() }
             }
 
             override fun onResponse(call: Call, response: Response) {
@@ -44,15 +42,16 @@ object OkhttpHelper {
                         profile.originUrl = profileObject.getString("OriginUrl")
                         profile.name = profileObject.getString("Name")
                         profile.host = profileObject.getString("Host")
+                        profile.method = profileObject.getString("Method")
                         profile.remotePort = profileObject.getInt("RemotePort")
                         profile.password = profileObject.getString("Password")
                         profile.vpnType = profileObject.getInt("VpnType")
                         profile.brookType = profileObject.getString("BrookType")
                         list.add(profile)
                     }
-                    handler.post { callBack.onSuccess(list) }
+                    app.handler.post { callBack.onSuccess(list) }
                 } else {
-                    handler.post { callBack.onFail() }
+                    app.handler.post { callBack.onFail() }
                 }
             }
 

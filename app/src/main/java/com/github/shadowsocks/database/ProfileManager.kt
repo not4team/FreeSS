@@ -52,6 +52,10 @@ object ProfileManager {
         return profile
     }
 
+    fun clearProfile() = PrivateDatabase.profileDao.clear()
+
+    fun insertProfiles(profiles: List<Profile>) = PrivateDatabase.profileDao.insertProfiles(profiles)
+
     /**
      * Note: It's caller's responsibility to update DirectBoot profile if necessary.
      */
@@ -59,8 +63,8 @@ object ProfileManager {
     fun updateProfile(profile: Profile) = check(PrivateDatabase.profileDao.update(profile) == 1)
 
     @Throws(IOException::class)
-    fun getProfile(id: Long): Profile? = try {
-        PrivateDatabase.profileDao[id]
+    fun getProfile(originUrl: String): Profile? = try {
+        PrivateDatabase.profileDao[originUrl]
     } catch (ex: SQLException) {
         if (ex.cause is SQLiteCantOpenDatabaseException) throw IOException(ex)
         Log.e(TAG, "getProfile", ex)

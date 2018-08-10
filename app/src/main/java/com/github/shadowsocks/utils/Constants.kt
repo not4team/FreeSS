@@ -28,6 +28,7 @@ object Key {
     const val DB_PROFILE = "profile.db"
 
     const val id = "profileId"
+    const val originUrl = "originUrl"
     const val name = "profileName"
 
     const val individual = "Proxyed"

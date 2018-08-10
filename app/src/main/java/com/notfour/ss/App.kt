@@ -9,14 +9,16 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.UserManager
+import android.util.Log
 import com.github.shadowsocks.bg.BaseService
 import com.github.shadowsocks.database.Profile
 import com.github.shadowsocks.database.ProfileManager
 import com.github.shadowsocks.preference.DataStore
-import com.github.shadowsocks.utils.Action
-import com.github.shadowsocks.utils.DeviceContext
-import com.github.shadowsocks.utils.DirectBoot
+import com.github.shadowsocks.utils.*
 import com.google.android.gms.ads.MobileAds
+import java.io.File
+import java.io.IOException
 
 /**
  * Created with author.
@@ -51,11 +53,33 @@ class App : Application() {
     fun stopService() = sendBroadcast(Intent(Action.CLOSE))
 
     var currentProfile: Profile? = null
-        get() = if (DataStore.directBootAware) DirectBoot.getDeviceProfile() else ProfileManager.getProfile(DataStore.profileId)
+        get() = if (DataStore.directBootAware) DirectBoot.getDeviceProfile() else ProfileManager.getProfile(DataStore.originUrl)
+
+    fun switchProfile(originUrl: String): Profile {
+        val result = ProfileManager.getProfile(originUrl) ?: ProfileManager.createProfile()
+        DataStore.originUrl = result.originUrl
+        return result
+    }
 
     override fun onCreate() {
         super.onCreate()
         app = this
         MobileAds.initialize(this, "ca-app-pub-7332030505319718~5493412561")
+        // handle data restored/crash
+        if (Build.VERSION.SDK_INT >= 24 && DataStore.directBootAware &&
+                (getSystemService(Context.USER_SERVICE) as UserManager).isUserUnlocked) DirectBoot.flushTrafficStats()
+        TcpFastOpen.enabledAsync(DataStore.publicStore.getBoolean(Key.tfo, TcpFastOpen.sendEnabled))
+        if (DataStore.publicStore.getLong(Key.assetUpdateTime, -1) != info.lastUpdateTime) {
+            val assetManager = assets
+            for (dir in arrayOf("acl", "overture"))
+                try {
+                    for (file in assetManager.list(dir)) assetManager.open("$dir/$file").use { input ->
+                        File(deviceContext.filesDir, file).outputStream().use { output -> input.copyTo(output) }
+                    }
+                } catch (e: IOException) {
+                    Log.e(TAG, e.message)
+                }
+            DataStore.publicStore.putLong(Key.assetUpdateTime, info.lastUpdateTime)
+        }
     }
 }

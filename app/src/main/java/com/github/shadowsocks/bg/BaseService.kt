@@ -38,6 +38,7 @@ import com.github.shadowsocks.preference.DataStore
 import com.github.shadowsocks.utils.*
 import com.notfour.ss.App.Companion.app
 import com.notfour.ss.R
+import com.notfour.ss.utils.CyptoUtils
 import org.json.JSONObject
 import java.io.File
 import java.io.IOException
@@ -142,7 +143,7 @@ object BaseService {
         internal fun updateTrafficTotal(tx: Long, rx: Long) {
             try {
                 // this.profile may have host, etc. modified and thus a re-fetch is necessary (possible race condition)
-                val profile = ProfileManager.getProfile((profile ?: return).id) ?: return
+                val profile = ProfileManager.getProfile((profile ?: return).originUrl) ?: return
                 profile.tx += tx
                 profile.rx += rx
                 ProfileManager.updateProfile(profile)
@@ -320,6 +321,7 @@ object BaseService {
                 return Service.START_NOT_STICKY
             }
             profile.name = profile.formattedName    // save name for later queries
+            profile.password = CyptoUtils.decode(profile.password)
             data.profile = profile
 
             TrafficMonitor.reset()
