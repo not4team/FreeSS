@@ -21,12 +21,42 @@ android {
             jniLibs.srcDirs = ['libs']
         }
     }
-    buildTypes {
+
+    signingConfigs {
+        debug {
+            storeFile file("freess.jks")
+            storePassword "7860#jk57"
+            keyAlias "freess"
+            keyPassword "7860#jk57"
+        }
         release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            storeFile file("freess.jks")
+            storePassword "7860#jk57"
+            keyAlias "freess"
+            keyPassword "7860#jk57"
         }
     }
+
+    buildTypes {
+        debug {
+            buildConfigField "boolean", "LOG_DEBUG", "true"
+            minifyEnabled false
+            zipAlignEnabled true
+            shrinkResources false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.debug
+        }
+
+        release {
+            buildConfigField "boolean", "LOG_DEBUG", "false" //不显示log
+            minifyEnabled true//混淆
+            zipAlignEnabled true//内存对齐
+            shrinkResources true // 移除无用的resource文件
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
@@ -35,7 +65,7 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation(name:"brook", ext:"aar")
+    implementation(name: "brook", ext: "aar")
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
     implementation "com.android.support:appcompat-v7:$supportLibraryVersion"
     implementation "com.android.support:preference-v14:$supportLibraryVersion"

@@ -7,7 +7,9 @@ import android.content.Context
 import android.content.Intent
 import android.net.VpnService
 import android.os.Bundle
+import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
+import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -23,6 +25,7 @@ import com.github.shadowsocks.bg.Executable
 import com.github.shadowsocks.database.Profile
 import com.github.shadowsocks.database.ProfileManager
 import com.github.shadowsocks.preference.DataStore
+import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdView
 import com.notfour.ss.App.Companion.app
 import com.notfour.ss.adapter.MySpinnerAdapter
@@ -100,13 +103,22 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Interface {
     }
 
     fun initClick() {
+        val profiles = ProfileManager.getAllProfiles()
+        if (profiles != null) {
+            mList = profiles
+            mAdapter.refreshItems(profiles)
+            mSpinner.setSelection(findIndexSpinner(DataStore.originUrl, profiles))
+        }
         OkhttpHelper.loadProfiles(object : OkhttpHelper.CallBack<List<Profile>> {
             override fun onSuccess(result: List<Profile>) {
                 mList = result
                 mAdapter.refreshItems(result)
                 ProfileManager.clearProfile()
                 ProfileManager.insertProfiles(result)
-                DataStore.originUrl = result.first().originUrl
+                if (DataStore.originUrl == null) {
+                    DataStore.originUrl = result.first().originUrl
+                }
+                mSpinner.setSelection(findIndexSpinner(DataStore.originUrl, result))
             }
 
             override fun onFail() {
@@ -122,7 +134,10 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Interface {
                     if (intent != null) startActivityForResult(intent, REQUEST_CONNECT)
                     else onActivityResult(REQUEST_CONNECT, Activity.RESULT_OK, null)
                 }
-                else -> app.startService()
+                else -> {
+                    app.startService()
+                    showCustomDialog()
+                }
             }
         }
         mSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
@@ -135,6 +150,27 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Interface {
             }
 
         }
+    }
+
+    fun findIndexSpinner(originUrl: String, profiles: List<Profile>): Int {
+        for (i in profiles.indices) {
+            if (originUrl == profiles[i].originUrl) {
+                return i
+            }
+        }
+        return 0
+    }
+
+    fun showCustomDialog() {
+        val customDialog = AlertDialog.Builder(this@MainActivity)
+        val dialogView = LayoutInflater.from(this@MainActivity).inflate(R.layout.activity_main_dialog, null)
+        customDialog.setTitle("广告")
+        customDialog.setView(dialogView)
+        customDialog.setNegativeButton("关闭", null)
+        val adView: AdView = dialogView.findViewById(R.id.main_dialog_adView)
+//        val adRequest = AdRequest.Builder().build()
+//        adView.loadAd(adRequest)
+        customDialog.show()
     }
 
     override fun onDestroy() {
@@ -152,12 +188,18 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Interface {
 
     override fun onOptionsItemSelected(item: MenuItem) =
             when (item.itemId) {
-                R.id.action_settings -> true
+                R.id.action_settings -> {
+                    startActivity(Intent(this, AboutActivity::class.java))
+                    true
+                }
                 else -> super.onOptionsItemSelected(item)
             }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (resultCode == Activity.RESULT_OK) app.startService() else {
+        if (resultCode == Activity.RESULT_OK) {
+            app.startService()
+            showCustomDialog()
+        } else {
             Toast.makeText(this, "Failed to start VpnService: $data", Toast.LENGTH_SHORT).show()
         }
     }
