@@ -9,13 +9,13 @@ import android.net.VpnService
 import android.os.Bundle
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
-import android.view.LayoutInflater
+import android.support.v7.widget.AppCompatSpinner
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.AdapterView
 import android.widget.Button
-import android.widget.Spinner
 import android.widget.Toast
 import com.github.shadowsocks.ShadowsocksConnection
 import com.github.shadowsocks.aidl.IShadowsocksService
@@ -26,7 +26,9 @@ import com.github.shadowsocks.database.Profile
 import com.github.shadowsocks.database.ProfileManager
 import com.github.shadowsocks.preference.DataStore
 import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.InterstitialAd
 import com.notfour.ss.App.Companion.app
 import com.notfour.ss.adapter.MySpinnerAdapter
 import com.notfour.ss.utils.OkhttpHelper
@@ -41,9 +43,10 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Interface {
 
     lateinit var mAdView: AdView
     lateinit var mBtn: Button
-    lateinit var mSpinner: Spinner
+    lateinit var mSpinner: AppCompatSpinner
     lateinit var mAdapter: MySpinnerAdapter
     lateinit var mList: List<Profile>
+    private lateinit var mInterstitialAd: InterstitialAd
     // service
     var state = BaseService.IDLE
 
@@ -95,8 +98,11 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Interface {
         mAdView = findViewById(R.id.adView)
         mAdapter = MySpinnerAdapter(this, R.layout.activity_main_spinner_item)
         mSpinner.adapter = mAdapter
-//        val adRequest = AdRequest.Builder().build()
-//        mAdView.loadAd(adRequest)
+        val adRequest = AdRequest.Builder().build()
+        mAdView.loadAd(adRequest)
+        mInterstitialAd = InterstitialAd(this)
+        mInterstitialAd.adUnitId = "ca-app-pub-7332030505319718/1974019313"
+        mInterstitialAd.loadAd(AdRequest.Builder().build())
         initClick()
         changeState(BaseService.IDLE)   // reset everything to init state
         app.handler.post { connection.connect() }
@@ -136,7 +142,11 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Interface {
                 }
                 else -> {
                     app.startService()
-                    showCustomDialog()
+                    if (mInterstitialAd.isLoaded) {
+                        mInterstitialAd.show()
+                    } else {
+                        Log.d(TAG, "The interstitial wasn't loaded yet.")
+                    }
                 }
             }
         }
@@ -146,7 +156,10 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Interface {
             }
 
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                app.switchProfile(mList[position].originUrl)
+                if (!mList[position].originUrl.equals(DataStore.originUrl)) {
+                    app.switchProfile(mList[position].originUrl)
+                    if (state == BaseService.CONNECTED) app.reloadService()
+                }
             }
 
         }
@@ -163,13 +176,13 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Interface {
 
     fun showCustomDialog() {
         val customDialog = AlertDialog.Builder(this@MainActivity)
-        val dialogView = LayoutInflater.from(this@MainActivity).inflate(R.layout.activity_main_dialog, null)
+        val dialogView = AdView(this)
+        dialogView.adSize = AdSize.SMART_BANNER
+        dialogView.adUnitId = "ca-app-pub-7332030505319718/5549877213"
+        dialogView.loadAd(AdRequest.Builder().build())
         customDialog.setTitle("广告")
         customDialog.setView(dialogView)
         customDialog.setNegativeButton("关闭", null)
-        val adView: AdView = dialogView.findViewById(R.id.main_dialog_adView)
-//        val adRequest = AdRequest.Builder().build()
-//        adView.loadAd(adRequest)
         customDialog.show()
     }
 
@@ -198,7 +211,11 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Interface {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (resultCode == Activity.RESULT_OK) {
             app.startService()
-            showCustomDialog()
+            if (mInterstitialAd.isLoaded) {
+                mInterstitialAd.show()
+            } else {
+                Log.d(TAG, "The interstitial wasn't loaded yet.")
+            }
         } else {
             Toast.makeText(this, "Failed to start VpnService: $data", Toast.LENGTH_SHORT).show()
         }
