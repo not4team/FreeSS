@@ -19,4 +19,7 @@
     <string name="stat_summary">Sent: \t\t\t\t\t%3$s\t↑\t%1$s\nReceived: \t%4$s\t↓\t%2$s</string>
     <string name="forward_success">Shadowsocks started.</string>
     <string name="about">都是网上的免费资源，可能不是很稳定，可做备用。</string>
+    <string name="service_vpn">"VPN 服务"</string>
+    <string name="service_proxy">"代理模式"</string>
+    <string name="service_transproxy">"透明代理模式"</string>
 </resources>

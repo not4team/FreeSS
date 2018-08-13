@@ -54,7 +54,7 @@ class ServiceNotification(private val service: BaseService.Interface, profileNam
     }
     private val callback by lazy {
         object : IShadowsocksServiceCallback.Stub() {
-            override fun stateChanged(state: Int, profileName: String?, msg: String?) { }   // ignore
+            override fun stateChanged(state: Int, profileName: String?, msg: String?) {}   // ignore
             override fun trafficUpdated(profileId: Long, txRate: Long, rxRate: Long, txTotal: Long, rxTotal: Long) {
                 service as Context
                 val txr = service.getString(R.string.speed, Formatter.formatFileSize(service, txRate))
@@ -64,7 +64,8 @@ class ServiceNotification(private val service: BaseService.Interface, profileNam
                         Formatter.formatFileSize(service, txTotal), Formatter.formatFileSize(service, rxTotal)))
                 show()
             }
-            override fun trafficPersisted(profileId: Long) { }
+
+            override fun trafficPersisted(profileId: Long) {}
         }
     }
     private val lockReceiver = broadcastReceiver { _, intent -> update(intent.action) }
@@ -76,7 +77,7 @@ class ServiceNotification(private val service: BaseService.Interface, profileNam
             .setTicker(service.getString(R.string.forward_success))
             .setContentTitle(profileName)
             .setContentIntent(MainActivity.pendingIntent(service))
-            .setSmallIcon(R.drawable.ic_service_active)
+            .setSmallIcon(R.drawable.ic_flash)
     private val style = NotificationCompat.BigTextStyle(builder)
     private var isVisible = true
 

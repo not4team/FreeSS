@@ -1,6 +1,8 @@
 package com.notfour.ss
 
 import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.admin.DevicePolicyManager
 import android.content.Context
 import android.content.Intent
@@ -10,6 +12,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.UserManager
+import android.support.annotation.RequiresApi
 import android.util.Log
 import com.github.shadowsocks.bg.BaseService
 import com.github.shadowsocks.database.Profile
@@ -80,6 +83,21 @@ class App : Application() {
                     Log.e(TAG, e.message)
                 }
             DataStore.publicStore.putLong(Key.assetUpdateTime, info.lastUpdateTime)
+        }
+        updateNotificationChannels()
+    }
+
+    private fun updateNotificationChannels() {
+        if (Build.VERSION.SDK_INT >= 26) @RequiresApi(26) {
+            val nm = getSystemService(NotificationManager::class.java)
+            nm.createNotificationChannels(listOf(
+                    NotificationChannel("service-vpn", getText(R.string.service_vpn),
+                            NotificationManager.IMPORTANCE_LOW),
+                    NotificationChannel("service-proxy", getText(R.string.service_proxy),
+                            NotificationManager.IMPORTANCE_LOW),
+                    NotificationChannel("service-transproxy", getText(R.string.service_transproxy),
+                            NotificationManager.IMPORTANCE_LOW)))
+            nm.deleteNotificationChannel("service-nat") // NAT mode is gone for good
         }
     }
 }
