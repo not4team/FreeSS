@@ -25,7 +25,7 @@ class MySpinnerAdapter : ArrayAdapter<Profile> {
         if (convertView == null) {
             convertView = LayoutInflater.from(context).inflate(R.layout.activity_main_spinner_item, null)
         }
-        val textView = convertView!!.findViewById<TextView>(R.id.main_spinner_item_text)
+        val textView = convertView as TextView
         textView.text = list[position].name
         return convertView!!
     }
@@ -41,9 +41,9 @@ class MySpinnerAdapter : ArrayAdapter<Profile> {
     override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup?): View {
         var convertView = convertView
         if (convertView == null) {
-            convertView = LayoutInflater.from(context).inflate(R.layout.activity_main_spinner_item, null)
+            convertView = LayoutInflater.from(context).inflate(R.layout.activity_main_spinner_downlist_item, null)
         }
-        val textView = convertView!!.findViewById<TextView>(R.id.main_spinner_item_text)
+        val textView = convertView as TextView
         textView.text = list[position].name
         return convertView!!
     }
