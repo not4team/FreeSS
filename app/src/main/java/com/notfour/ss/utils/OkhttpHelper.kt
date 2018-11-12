@@ -23,7 +23,7 @@ object OkhttpHelper {
 
     fun loadProfiles(callBack: CallBack<List<Profile>>) {
         val request = Request.Builder()
-                .url("http://198.181.33.161:8055/getAllprofile")
+                .url("http://vpn.oyigo.com:8055/getAllprofile")
                 .build()
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
